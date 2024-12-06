@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+#  mfa-telephone-analysis-server:
+#    image: 8537190_devchalange_21
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - "8080:8080"
+#    env_file:
+#      - ./environments/local.env
+#    restart: unless-stopped
+
+  mfa-telephone-analysis-postgres:
+    image: postgres:16.1
+    ports:
+      - '${POSTGRES_PORT}:5432'
+    environment:
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+      POSTGRES_DB: '${POSTGRES_DB}'
+      TZ: 'Europe/Kyiv'
+    volumes:
+      - mfa-telephone-analysis-api-db:/var/lib/postgresql/data
+
+  mfa-telephone-analysis-redis:
+    image: redis:7.2.3
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    command: >
+      --requirepass '${REDIS_PASSWORD:-redispass}'
+    restart: unless-stopped
+
+  mfa-telephone-analysis-s3:
+    image: quay.io/minio/minio:latest
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    ports:
+      - "8000:9000"
+      - "8001:9001"
+    volumes:
+      - mfa-telephone-analysis-api-s3-data:/data
+    environment:
+      - MINIO_ROOT_USER=user
+      - MINIO_ROOT_PASSWORD=password
+
+volumes:
+  mfa-telephone-analysis-api-db:
+  mfa-telephone-analysis-api-s3-data:
